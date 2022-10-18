@@ -1,6 +1,6 @@
 const BLOG = {
-  title: '第一年，成为更好的我们',
-  author: '李伟',
+  title: '第一年',
+  author: '第一年',
   email: 'liwei@diyinian.com',
   link: 'https://diyinian.com',
   description: '给自己一年时间，换一个更好的自己.',
