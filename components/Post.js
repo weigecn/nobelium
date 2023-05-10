@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import Image from 'next/image'
 import cn from 'classnames'
-import BLOG from '@/blog.config'
+import { useConfig } from '@/lib/config'
 import useTheme from '@/lib/theme'
 import FormattedDate from '@/components/FormattedDate'
 import TagItem from '@/components/TagItem'
@@ -19,12 +19,13 @@ import TableOfContents from '@/components/TableOfContents'
  * @prop {string}   emailHash  - Author email hash (for Gravatar)
  * @prop {boolean} [fullWidth] - Whether in full-width mode
  */
-export default function Post(props) {
+export default function Post (props) {
+  const BLOG = useConfig()
   const { post, blockMap, emailHash, fullWidth = false } = props
   const { dark } = useTheme()
 
   return (
-    <article className={cn('px-4 flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
+    <article className={cn('flex flex-col', fullWidth ? 'md:px-24' : 'items-center')}>
       <h1 className={cn(
         'w-full font-bold text-3xl text-black dark:text-white',
         { 'max-w-2xl px-4': !fullWidth }

@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import BLOG from '@/blog.config'
+import Image from 'next/image'
+import { useConfig } from '@/lib/config'
 import { useLocale } from '@/lib/locale'
+import useTheme from '@/lib/theme'
 
 const NavBar = () => {
+  const BLOG = useConfig()
   const locale = useLocale()
   const links = [
     { id: 0, name: locale.NAV.INDEX, to: BLOG.path || '/', show: true },
     { id: 1, name: locale.NAV.ABOUT, to: '/about', show: BLOG.showAbout },
-    { id: 2, name: locale.NAV.RSS, to: '/feed', show: true },
+    { id: 2, name: locale.NAV.RSS, to: '/feed', show: true, external: true },
     { id: 3, name: locale.NAV.SEARCH, to: '/search', show: true }
   ]
   return (
@@ -21,7 +24,7 @@ const NavBar = () => {
                 key={link.id}
                 className="block ml-4 text-black dark:text-gray-50 nav"
               >
-                <Link href={link.to}>{link.name}</Link>
+                <Link href={link.to} target={link.external ? '_blank' : null}>{link.name}</Link>
               </li>
             )
         )}
@@ -30,7 +33,22 @@ const NavBar = () => {
   )
 }
 
-const Header = ({ navBarTitle, fullWidth }) => {
+export default function Header ({ navBarTitle, fullWidth }) {
+  const BLOG = useConfig()
+  const { dark } = useTheme()
+
+  // Favicon
+
+  const resolveFavicon = fallback => !fallback && dark ? '/favicon.dark.png' : '/favicon.png'
+  const [favicon, _setFavicon] = useState(resolveFavicon())
+  const setFavicon = fallback => _setFavicon(resolveFavicon(fallback))
+
+  useEffect(
+    () => setFavicon(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dark]
+  )
+
   const useSticky = !BLOG.autoCollapsedNavBar
   const navRef = useRef(/** @type {HTMLDivElement} */ undefined)
   const sentinelRef = useRef(/** @type {HTMLDivElement} */ undefined)
@@ -57,7 +75,10 @@ const Header = ({ navBarTitle, fullWidth }) => {
   function handleClickHeader (/** @type {MouseEvent} */ ev) {
     if (![navRef.current, titleRef.current].includes(ev.target)) return
 
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
   }
 
   return (
@@ -82,54 +103,21 @@ const Header = ({ navBarTitle, fullWidth }) => {
         </svg>
         <div className="flex items-center">
           <Link href="/" aria-label={BLOG.title}>
-            <div className="h-6">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  width="24"
-                  height="24"
-                  className="fill-current text-black dark:text-white"
-                />
-                <rect width="24" height="24" fill="url(#paint0_radial)" />
-                <defs>
-                  <radialGradient
-                    id="paint0_radial"
-                    cx="0"
-                    cy="0"
-                    r="1"
-                    gradientUnits="userSpaceOnUse"
-                    gradientTransform="rotate(45) scale(39.598)"
-                  >
-                    <stop stopColor="#CFCFCF" stopOpacity="0.6" />
-                    <stop offset="1" stopColor="#E9E9E9" stopOpacity="0" />
-                  </radialGradient>
-                </defs>
-              </svg>
-            </div>
+            <Image
+              src={favicon}
+              width={24}
+              height={24}
+              alt={BLOG.title}
+              onError={() => setFavicon(true)}
+            />
           </Link>
-          {navBarTitle ? (
-            <p
-              ref={titleRef}
-              className="ml-2 font-medium text-day dark:text-night header-name"
-              onClick={handleClickHeader}
-            >
-              {navBarTitle}
-            </p>
-          ) : (
-            <p
-              ref={titleRef}
-              className="ml-2 font-medium text-day dark:text-night header-name"
-              onClick={handleClickHeader}
-            >
-              {BLOG.title},{' '}
-              <span className="font-normal">{BLOG.description}</span>
-            </p>
-          )}
+          <HeaderName
+            ref={titleRef}
+            siteTitle={BLOG.title}
+            siteDescription={BLOG.description}
+            postTitle={navBarTitle}
+            onClick={handleClickHeader}
+          />
         </div>
         <NavBar />
       </div>
@@ -137,4 +125,18 @@ const Header = ({ navBarTitle, fullWidth }) => {
   )
 }
 
-export default Header
+const HeaderName = forwardRef(function HeaderName ({ siteTitle, siteDescription, postTitle, onClick }, ref) {
+  return (
+    <p
+      ref={ref}
+      className="header-name ml-2 font-medium text-gray-600 dark:text-gray-300 capture-pointer-events grid-rows-1 grid-cols-1 items-center"
+      onClick={onClick}
+    >
+      {postTitle && <span className="post-title row-start-1 col-start-1">{postTitle}</span>}
+      <span className="row-start-1 col-start-1">
+        <span className="site-title">{siteTitle}</span>
+        <span className="site-description font-normal">, {siteDescription}</span>
+      </span>
+    </p>
+  )
+})
